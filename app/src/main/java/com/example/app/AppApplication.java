@@ -3,13 +3,12 @@ package com.example.app;
 import org.apache.http.client.fluent.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.http.HttpHeaders;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -19,7 +18,11 @@ import java.util.Random;
 
 @SpringBootApplication
 @RestController
+@EnableCaching
 public class AppApplication {
+    @Autowired
+    private PeanutsService service;
+
     Logger logger = LoggerFactory.getLogger(AppApplication.class);
 
     public static void main(String[] args) {
@@ -38,14 +41,14 @@ public class AppApplication {
     }
 
     @GetMapping("/io_task")
-    public String io_task(@RequestParam(value = "name", defaultValue = "World") String name) throws InterruptedException {
+    public String io_task() throws InterruptedException {
         Thread.sleep(1000);
         logger.info("io_task");
         return "io_task";
     }
 
     @GetMapping("/cpu_task")
-    public String cpu_task(@RequestParam(value = "name", defaultValue = "World") String name) {
+    public String cpu_task() {
         for (int i = 0; i < 100; i++) {
             int tmp = i * i * i;
         }
@@ -54,14 +57,14 @@ public class AppApplication {
     }
 
     @GetMapping("/random_sleep")
-    public String random_sleep(@RequestParam(value = "name", defaultValue = "World") String name) throws InterruptedException {
+    public String random_sleep() throws InterruptedException {
         Thread.sleep((int) (Math.random() / 5 * 10000));
         logger.info("random_sleep");
         return "random_sleep";
     }
 
     @GetMapping("/random_status")
-    public String random_status(@RequestParam(value = "name", defaultValue = "World") String name, HttpServletResponse response) throws InterruptedException {
+    public String random_status(HttpServletResponse response) throws InterruptedException {
         List<Integer> givenList = Arrays.asList(200, 200, 300, 400, 500);
         Random rand = new Random();
         int randomElement = givenList.get(rand.nextInt(givenList.size()));
@@ -71,7 +74,7 @@ public class AppApplication {
     }
 
     @GetMapping("/chain")
-    public String chain(@RequestParam(value = "name", defaultValue = "World") String name) throws InterruptedException, IOException {
+    public String chain() throws InterruptedException, IOException {
         String TARGET_ONE_HOST = System.getenv().getOrDefault("TARGET_ONE_HOST", "localhost");
         String TARGET_TWO_HOST = System.getenv().getOrDefault("TARGET_TWO_HOST", "localhost");
         logger.debug("chain is starting");
@@ -86,8 +89,21 @@ public class AppApplication {
     }
 
     @GetMapping("/error_test")
-    public String error_test(@RequestParam(value = "name", defaultValue = "World") String name) throws Exception {
+    public String error_test() throws Exception {
         throw new Exception("Error test");
     }
 
+    @GetMapping("/peanuts/{id}")
+    public Peanuts getPeanutsById(@PathVariable Long id) {
+        logger.info("Get Peanuts Character by id");
+        return service.getPeanutsById(id);
+    }
+
+    @PostMapping("/peanuts")
+    public Peanuts savePeanuts(@RequestBody Peanuts peanuts) {
+        logger.info("Create Peanuts Character");
+        return service.savePeanuts(peanuts);
+    }
+
 }
+
